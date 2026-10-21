@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f5f3ee">
-<title>日文知識庫｜每頁 20 張字卡</title>
+<title>J.Law 日文筆記｜每頁 20 張字卡</title>
 <style>
 :root{--bg:#f5f3ee;--paper:#fffefa;--ink:#292b28;--muted:#74766f;--line:#e6e2d9;--accent:#285c4d;--accent-soft:#e5eee9;--gold:#d6a85c;--shadow:0 8px 30px #292b280a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.6}
@@ -185,7 +185,7 @@ footer strong{color:var(--ink)}
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="日文知識庫">
+<meta name="apple-mobile-web-app-title" content="J.Law 日文筆記">
 </head>
 <body>
 <div id="appToast" role="status" aria-live="polite"></div>
@@ -205,7 +205,7 @@ footer strong{color:var(--ink)}
 </script>
 <header>
   <div class="eyebrow">Personal Japanese Library</div>
-  <h1>日文知識庫<span style="color:var(--gold)">。</span></h1>
+  <h1>J.Law 日文筆記<span style="color:var(--gold)">。</span></h1>
   <p class="subtitle">把你整理過的文法、生字、會話與聽解筆記，集中在一個地方快速搜尋。</p>
 </header>
 <main>
@@ -1435,7 +1435,7 @@ $('exportFullData').addEventListener('click',()=>{
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = '日文知識庫_整份資料.json';
+  a.download = 'J.Law 日文筆記_整份資料.json';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
@@ -1568,7 +1568,7 @@ async function getLatestFromCloud(showMessage=true){
   cloudBusy=true;
   try{
     const rows=await cloudRequest('GET');
-    if(!rows.length || !rows[0].data){if(showMessage)notifyUser('Supabase 尚未有日文知識庫備份。請先按「雲端備份」建立雲端資料。','error',4500);return false;}
+    if(!rows.length || !rows[0].data){if(showMessage)notifyUser('Supabase 尚未有J.Law 日文筆記備份。請先按「雲端備份」建立雲端資料。','error',4500);return false;}
     applyCloudPayload(rows[0].data);
     cloudReady=true;
     if(showMessage)notifyUser('已取得最新雲端資料，正在重新載入…');
