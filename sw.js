@@ -2,7 +2,7 @@ const CACHE_NAME = 'japanese-knowledge-base-pwa-v4';
 const APP_SHELL = [
   './',
   './index.html',
-  '.manifest.json',
+  '.manifest.webmanifest',
   '.icon-192.png',
   '.icon-512.png',
   '.icon-maskable-512.png'
