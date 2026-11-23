@@ -1956,12 +1956,26 @@ $('cloudLatestButton').addEventListener('click',()=>getLatestFromCloud(true));
 
 // On startup, prefer the cloud copy when one exists; if unavailable, keep using this device's data.
 (async function startWithCloud(){
-  try{
-    const rows=await cloudRequest('GET');
-    if(rows.length && rows[0].data){applyCloudPayload(rows[0].data);}
-  }catch(err){console.warn('啟動時無法取得 Supabase 最新資料，繼續使用本機資料。',err);}
-  cloudReady=true;
-  render();
+  // Local-first: paint from localStorage / embedded DB immediately.
+  // Never block the first paint on network (critical for offline / flaky mobile).
+  try { render(); } catch (err) { console.error('初次 render 失敗', err); }
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    cloudReady = true;
+    return;
+  }
+
+  try {
+    const rows = await cloudRequest('GET');
+    if (rows.length && rows[0].data) {
+      applyCloudPayload(rows[0].data);
+      try { render(); } catch (err) { console.error(err); }
+    }
+  } catch (err) {
+    console.warn('啟動時無法取得 Supabase 最新資料，繼續使用本機資料。', err);
+  } finally {
+    cloudReady = true;
+  }
 })();
 </script>
 
@@ -1985,23 +1999,49 @@ $('cloudLatestButton').addEventListener('click',()=>getLatestFromCloud(true));
   setTimeout(setCloudButtonsState, 0);
 
   // Register service worker (same origin only; no CDN)
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg=>{
-          // Prompt soft update when a new worker is waiting
-          if(reg.waiting){ reg.waiting.postMessage({type:'SKIP_WAITING'}); }
-          reg.addEventListener('updatefound', ()=>{
-            const nw = reg.installing;
-            if(!nw) return;
-            nw.addEventListener('statechange', ()=>{
-              if(nw.state==='installed' && navigator.serviceWorker.controller){
-                if(typeof notifyUser==='function') notifyUser('已更新離線版本，重新開啟頁面後生效。');
-              }
-            });
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              if (typeof notifyUser === 'function') notifyUser('已更新離線版本。請完全關閉 App 再打開以載入新版。');
+            }
           });
-        })
-        .catch(err=>console.warn('Service worker 註冊失敗（不影響本機使用）', err));
+        });
+
+        // Ensure this exact page URL is in Cache Storage (fixes iOS home-screen offline blank page)
+        if (navigator.onLine !== false && 'caches' in window) {
+          try {
+            const cache = await caches.open('japanese-knowledge-base-pwa-v5');
+            const pageUrl = location.href.split('#')[0];
+            const res = await fetch(pageUrl, { cache: 'no-cache' });
+            if (res && res.ok) {
+              await cache.put(pageUrl, res.clone());
+              await cache.put(new URL('./index.html', location.href).href, res.clone());
+              await cache.put(new URL('./', location.href).href, res.clone());
+            }
+            if (reg.active) {
+              reg.active.postMessage({
+                type: 'CACHE_URLS',
+                urls: [
+                  new URL('./index.html', location.href).href,
+                  new URL('./', location.href).href,
+                  pageUrl
+                ]
+              });
+            }
+          } catch (err) {
+            console.warn('預先寫入離線快取失敗', err);
+          }
+        }
+      } catch (err) {
+        console.warn('Service worker 註冊失敗（本機資料仍可用）', err);
+      }
     });
   }
 })();
